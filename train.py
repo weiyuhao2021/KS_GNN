@@ -64,15 +64,44 @@ if __name__ == "__main__":
 
     output_dict = {}
 
+    Nv = torch.zeros(3327)
+    Nv = Nv.to(device)
+    for i in edge_index[0]:
+        Nv[i] = Nv[i] + 1
+
+    Nv_ = torch.Tensor(3703, 3327)
+    Nv_ = Nv_.to(device)
+    Nv_ = Nv_.copy_(Nv)
+    Nv_ = Nv_.transpose(0, 1)
+    one = torch.ones(3327, 3703)
+    one = one.to(device)
+    l1 = torch.div(Nv_, Nv_ + one)
+    l2 = torch.div(one, Nv_ + one)
+
+    Nv2_ = torch.Tensor(64, 3327)
+    Nv2_ = Nv2_.to(device)
+    Nv2_ = Nv2_.copy_(Nv)
+    Nv2_ = Nv2_.transpose(0, 1)
+    one = torch.ones(3327, 64)
+    one = one.to(device)
+    l3 = torch.div(Nv2_, Nv2_ + one)
+    l4 = torch.div(one, Nv2_ + one)
+
+
+
     for repeat in range(args.repeat):
 
         model = KSNN(
             X.shape[1],
             args.hid_d,
             args.d,
+            l1=l1,
+            l2=l2,
+            l3=l3,
+            l4=l4,
             layer_num=args.layer_num,
             conv_num=args.conv_num,
-            alpha=args.alpha,
+            alpha=args.alpha
         ).to(device)
 
         trainer = Trainer(model, X, edge_index, args)
@@ -97,7 +126,7 @@ if __name__ == "__main__":
                     print(("BEST RESULT ON VALIDATE DATA:{:.4}").format(trainer.bestResult))
                     break
 
-        
+
 
         if os.path.isfile(model_path):
             model.load_state_dict(torch.load(model_path))
@@ -108,7 +137,7 @@ if __name__ == "__main__":
 
         print(f'repeat {repeat}: {output_dict["KS-GNN"][-1]}')
 
-    
+
     output_dict["KS-GNN"] = np.array(output_dict["KS-GNN"]).mean()
 
     print(f"Test Result:{output_dict['KS-GNN']:.4}")
@@ -119,9 +148,13 @@ if __name__ == "__main__":
             X.shape[1],
             args.hid_d,
             args.d,
+            l1=l1,
+            l2=l2,
+            l3=l3,
+            l4=l4,
             layer_num=args.layer_num,
             conv_num=args.conv_num,
-            alpha=args.alpha,
+            alpha=args.alpha
         ).to(device)
 
         trainer = Trainer(model, X, edge_index, args)
